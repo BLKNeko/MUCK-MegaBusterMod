@@ -1,0 +1,30 @@
+ManifestFileVersion: 0
+CRC: 167318898
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 8ca8040f591bac8d04f2d7e6a62f5a4d
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: f2636f03326329324e4a2690e2636360
+HashAppended: 0
+ClassTypes:
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 213
+  Script: {instanceID: 0}
+Assets:
+- Assets/XBMat.mat
+- Assets/MBIcon.png
+- Assets/Tex_0892_1.png
+- Assets/MBMesh.mesh
+- Assets/XBMesh.mesh
+- Assets/MBMat.mat
+- Assets/buster_009_000.png
+Dependencies: []
