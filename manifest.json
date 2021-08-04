@@ -1,0 +1,9 @@
+{
+  "name": "MegaBusterMod",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/BLKNeko/MUCK-MegaBusterMod",
+  "description": "This mod add MegaBuster as a craftable weapons on MUCK!",
+  "dependencies": [
+    "BepInEx-BepInExPack_Muck-5.4.1101"
+  ]
+}

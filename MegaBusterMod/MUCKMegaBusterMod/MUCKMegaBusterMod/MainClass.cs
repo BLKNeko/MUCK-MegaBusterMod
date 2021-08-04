@@ -3,6 +3,7 @@ using BepInEx.Logging;
 using HarmonyLib;
 using R2API;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,7 @@ using UnityEngine;
 
 namespace MUCKMegaBusterMod
 {
-    [BepInPlugin("com.BLKNeko.MegaBusterMod", "MegaBusterMod", "1.0.0.0")]
+    [BepInPlugin("com.BLKNeko.MegaBusterMod", "MegaBusterMod", "1.0.0")]
 
     public class MainClass : BaseUnityPlugin
     {
@@ -63,6 +64,8 @@ namespace MUCKMegaBusterMod
 
             public static Material MBMat;
 
+            public static AudioClip MBShootSFX;
+
             internal static void LoadAssetBundle()
             {
                 if (mainAssetBundle == null)
@@ -103,6 +106,8 @@ namespace MUCKMegaBusterMod
 
                 MBMat = mainAssetBundle.LoadAsset<Material>("MBMat");
 
+                MBShootSFX = mainAssetBundle.LoadAsset<AudioClip>("MBShootSFX");
+
 
             }
 
@@ -141,7 +146,7 @@ namespace MUCKMegaBusterMod
 						}
 					}
 					inventoryItem.name = "MegaBuster";
-					inventoryItem.description = "MegaBuster to shoot";
+					inventoryItem.description = "Equip at least 1 ARROW to shoot (IT DOES NOT CONSUMES ARROWS)";
 					inventoryItem.id = ItemManager.Instance.allItems.Count;
 					//inventoryItem.mesh = MuckUpgradeBuildings.hammerMesh;
 					inventoryItem.mesh = Assets.MBMesh;
@@ -161,7 +166,7 @@ namespace MUCKMegaBusterMod
 					inventoryItem.attackDamage = 1;
                     
 
-                    inventoryItem.attackSpeed = 0.4f;
+                    inventoryItem.attackSpeed = 0.8f;
 
                     inventoryItem.attackRange = 100f;
 
@@ -179,20 +184,55 @@ namespace MUCKMegaBusterMod
 
 
 					InventoryItem.CraftRequirement craftRequirement = new InventoryItem.CraftRequirement();
-					foreach (InventoryItem inventoryItem3 in ItemManager.Instance.allItems.Values)
+                    InventoryItem.CraftRequirement craftRequirement2 = new InventoryItem.CraftRequirement();
+                    InventoryItem.CraftRequirement craftRequirement3 = new InventoryItem.CraftRequirement();
+                    foreach (InventoryItem inventoryItem3 in ItemManager.Instance.allItems.Values)
 					{
-						bool flag3 = inventoryItem3.name == "Rock";
+						bool flag3 = inventoryItem3.name == "Gold bar";
 						if (flag3)
 						{
 							craftRequirement.item = inventoryItem3;
 							break;
 						}
-					}
-					craftRequirement.amount = 5;
-					inventoryItem.requirements = new InventoryItem.CraftRequirement[]
+
+                    }
+					craftRequirement.amount = 1;
+                    // ------------------------------------
+
+                    foreach (InventoryItem inventoryItem3 in ItemManager.Instance.allItems.Values)
+                    {
+                        bool flag4 = inventoryItem3.name == "Iron bar";
+                        if (flag4)
+                        {
+                            craftRequirement2.item = inventoryItem3;
+                            break;
+                        }
+
+                    }
+                    craftRequirement2.amount = 1;
+                    // ------------------------------------
+
+                    foreach (InventoryItem inventoryItem3 in ItemManager.Instance.allItems.Values)
+                    {
+                        bool flag5 = inventoryItem3.name == "Mithril bar";
+                        if (flag5)
+                        {
+                            craftRequirement3.item = inventoryItem3;
+                            break;
+                        }
+
+                    }
+                    craftRequirement3.amount = 1;
+                    // ------------------------------------
+
+
+
+                    inventoryItem.requirements = new InventoryItem.CraftRequirement[]
 					{
-					craftRequirement
-					};
+					craftRequirement,
+                    craftRequirement2,
+                    craftRequirement3
+                    };
 					ItemManager.Instance.allItems.Add(inventoryItem.id, inventoryItem);
 					Debug.Log("Added MegaBuster");
 					BusterID = inventoryItem.id;
@@ -306,7 +346,10 @@ namespace MUCKMegaBusterMod
             // Token: 0x0400049C RID: 1180
             public static InventoryItem currentItem;
 
-            
+            public static bool InCooldown = false;
+
+
+
 
             [HarmonyPatch(typeof(UseInventory), "ReleaseWeapon")]
             [HarmonyPrefix]
@@ -316,7 +359,7 @@ namespace MUCKMegaBusterMod
                 InventoryItem inventoryBuster = (InventoryItem)Traverse.Create(__instance).Field("currentItem").GetValue();
                 bool flag = inventoryBuster != null && inventoryBuster.name.Contains("MegaBuster");
 
-                float Timer = 0f;
+                
 
 
                 if (flag)
@@ -339,19 +382,30 @@ namespace MUCKMegaBusterMod
                     //     MonoBehaviour.print("charge: " + num);
                     // }
                     ClientSend.AnimationUpdate(OnlinePlayer.SharedAnimation.Charge, false);
-                    __instance.animator.Play("Shoot", -1, 0f);
+                    //__instance.animator.Play("Shoot", -1, 0f);
                     // CooldownBar.Instance.HideBar();
-                    bool col = CooldownBar.Instance.isActiveAndEnabled;
+                    //bool col = CooldownBar.Instance.isActiveAndEnabled;
                     
-                    Debug.Log(col);
-                    if (InventoryUI.Instance.arrows.currentItem == null || col || Timer <= 1.5f)
+                    //Debug.Log(col);
+                    if (InventoryUI.Instance.arrows.currentItem == null || InCooldown )
                     {
                         Debug.Log("Stoooooop");
-                        // return false;
-                        Timer = 0f;
+                        return false;
+                        
                     }
                     else
                     {
+                        __instance.animator.Play("Shoot", -1, 0f);
+
+
+                        //__instance.chargeSfx.clip = Assets.MBShootSFX;
+                        //__instance.chargeSfx.Play();
+
+                       // __instance.eatSfx.clip = Assets.MBShootSFX;
+                        __instance.eatSfx.PlayOneShot(Assets.MBShootSFX);
+                        
+                        
+                        
 
                         InventoryItem inventoryItem = Hotbar.Instance.currentItem;
                         InventoryItem inventoryItem2 = InventoryUI.Instance.arrows.currentItem;
@@ -375,7 +429,7 @@ namespace MUCKMegaBusterMod
                             float num4 = (float)Hotbar.Instance.currentItem.attackDamage;
                             float num5 = (float)inventoryItem2.attackDamage;
                             // float projectileSpeed = inventoryItem.bowComponent.projectileSpeed;
-                            float projectileSpeed = 88f;
+                            float projectileSpeed = 90f;
                             Rigidbody component = gameObject.GetComponent<Rigidbody>();
                             float num6 = 80f * num * projectileSpeed * PowerupInventory.Instance.GetRobinMultiplier(null);
                             component.AddForce(vector2 * num6);
@@ -383,7 +437,7 @@ namespace MUCKMegaBusterMod
                             float num7 = num5 * num4;
                             num7 *= num;
                             Arrow component2 = gameObject.GetComponent<Arrow>();
-                            component2.damage = (int)((num7 / 4) * PowerupInventory.Instance.GetRobinMultiplier(null));
+                            component2.damage = (int)((num7 / 3) * PowerupInventory.Instance.GetRobinMultiplier(null));
                             component2.fallingWhileShooting = (!PlayerMovement.Instance.grounded && PlayerMovement.Instance.GetVelocity().y < 0f);
                             component2.speedWhileShooting = PlayerMovement.Instance.GetVelocity().magnitude;
                             component2.item = inventoryItem2;
@@ -406,14 +460,10 @@ namespace MUCKMegaBusterMod
                         InventoryUI.Instance.arrows.UpdateCell();
                         CameraShaker.Instance.ChargeShake(num);
 
-                        CooldownBar.Instance.ResetCooldownTime(4f, true);
+                        CooldownBar.Instance.ResetCooldownTime(0.2f, true);
+                        __instance.StartCoroutine(ExampleCoroutine());
 
                         
-
-                        if (Timer <= 5)
-                        {
-                            Timer += Time.deltaTime;
-                        }
 
                     }
                     
@@ -428,6 +478,24 @@ namespace MUCKMegaBusterMod
 
 
             }
+
+
+            public static IEnumerator ExampleCoroutine()
+            {
+                //Print the time of when the function is first called.
+                Debug.Log("Started Coroutine at timestamp : " + Time.time);
+                ShootBuster.InCooldown = true;
+
+                //yield on a new YieldInstruction that waits for 5 seconds.
+                yield return new WaitForSeconds(0.2f);
+
+                //After we have waited 5 seconds print the time again.
+                Debug.Log("Finished Coroutine at timestamp : " + Time.time);
+                ShootBuster.InCooldown = false;
+            }
+
+
+
 
         }
 

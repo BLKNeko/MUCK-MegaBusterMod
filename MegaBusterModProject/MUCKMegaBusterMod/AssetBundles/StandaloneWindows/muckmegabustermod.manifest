@@ -1,12 +1,12 @@
 ManifestFileVersion: 0
-CRC: 167318898
+CRC: 1196659779
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 8ca8040f591bac8d04f2d7e6a62f5a4d
+    Hash: 9c506fac4b3ba852d76155267e3d0262
   TypeTreeHash:
     serializedVersion: 2
-    Hash: f2636f03326329324e4a2690e2636360
+    Hash: 0b0d1075c8e9b252a7b37359d65f7ed0
 HashAppended: 0
 ClassTypes:
 - Class: 21
@@ -17,14 +17,13 @@ ClassTypes:
   Script: {instanceID: 0}
 - Class: 48
   Script: {instanceID: 0}
+- Class: 83
+  Script: {instanceID: 0}
 - Class: 213
   Script: {instanceID: 0}
 Assets:
-- Assets/XBMat.mat
+- Assets/MBShootSFX.wav
 - Assets/MBIcon.png
-- Assets/Tex_0892_1.png
 - Assets/MBMesh.mesh
-- Assets/XBMesh.mesh
 - Assets/MBMat.mat
-- Assets/buster_009_000.png
 Dependencies: []
