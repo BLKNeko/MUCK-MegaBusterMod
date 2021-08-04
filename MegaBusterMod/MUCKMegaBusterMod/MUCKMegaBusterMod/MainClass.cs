@@ -156,13 +156,20 @@ namespace MUCKMegaBusterMod
 					
 					inventoryItem.rotationOffset = new Vector3(215, 0, 200);
 
-					//inventoryItem.type = InventoryItem.ItemType.Bow;
+					inventoryItem.type = InventoryItem.ItemType.Bow;
 
-					inventoryItem.attackDamage = 50;
+					inventoryItem.attackDamage = 1;
+                    
 
-                    inventoryItem.bowComponent.projectileSpeed = 300f;
-                    inventoryItem.bowComponent.nArrows = 1;
-                    inventoryItem.bowComponent.angleDelta = 1;
+                    inventoryItem.attackSpeed = 0.4f;
+
+                    inventoryItem.attackRange = 100f;
+
+                    
+
+                   // inventoryItem.bowComponent.projectileSpeed = 300f;
+                   // inventoryItem.bowComponent.nArrows = 1;
+                   // inventoryItem.bowComponent.angleDelta = 1;
 
 				
 
@@ -299,7 +306,7 @@ namespace MUCKMegaBusterMod
             // Token: 0x0400049C RID: 1180
             public static InventoryItem currentItem;
 
-
+            
 
             [HarmonyPatch(typeof(UseInventory), "ReleaseWeapon")]
             [HarmonyPrefix]
@@ -309,10 +316,15 @@ namespace MUCKMegaBusterMod
                 InventoryItem inventoryBuster = (InventoryItem)Traverse.Create(__instance).Field("currentItem").GetValue();
                 bool flag = inventoryBuster != null && inventoryBuster.name.Contains("MegaBuster");
 
+                float Timer = 0f;
+
+
                 if (flag)
                 {
 
                     Debug.Log("Shoot MegaBuster");
+                    
+
 
                     //ShootBuster.animator.Play("Shoot", -1, 0f);
 
@@ -328,57 +340,84 @@ namespace MUCKMegaBusterMod
                     // }
                     ClientSend.AnimationUpdate(OnlinePlayer.SharedAnimation.Charge, false);
                     __instance.animator.Play("Shoot", -1, 0f);
-                    CooldownBar.Instance.HideBar();
-                    if (InventoryUI.Instance.arrows.currentItem == null)
+                    // CooldownBar.Instance.HideBar();
+                    bool col = CooldownBar.Instance.isActiveAndEnabled;
+                    
+                    Debug.Log(col);
+                    if (InventoryUI.Instance.arrows.currentItem == null || col || Timer <= 1.5f)
                     {
-                        return false;
+                        Debug.Log("Stoooooop");
+                        // return false;
+                        Timer = 0f;
                     }
-                    InventoryItem inventoryItem = Hotbar.Instance.currentItem;
-                    InventoryItem inventoryItem2 = InventoryUI.Instance.arrows.currentItem;
-                    List<Collider> list = new List<Collider>();
-                    int num2 = 0;
-                    while (num2 < inventoryItem.bowComponent.nArrows && !(InventoryUI.Instance.arrows.currentItem == null))
+                    else
                     {
-                        //inventoryItem2.amount--;
-                        if (inventoryItem2.amount <= 0)
+
+                        InventoryItem inventoryItem = Hotbar.Instance.currentItem;
+                        InventoryItem inventoryItem2 = InventoryUI.Instance.arrows.currentItem;
+                        List<Collider> list = new List<Collider>();
+                        int num2 = 0;
+                        while (num2 < inventoryItem.bowComponent.nArrows && !(InventoryUI.Instance.arrows.currentItem == null))
                         {
-                            InventoryUI.Instance.arrows.currentItem = null;
+                            //inventoryItem2.amount--;
+                            if (inventoryItem2.amount <= 0)
+                            {
+                                InventoryUI.Instance.arrows.currentItem = null;
+                            }
+                            Vector3 vector = PlayerMovement.Instance.playerCam.position + Vector3.down * 0.5f;
+                            Vector3 vector2 = PlayerMovement.Instance.playerCam.forward;
+                            float num3 = (float)inventoryItem.bowComponent.angleDelta;
+                            vector2 = Quaternion.AngleAxis(-(num3 * (float)(inventoryItem.bowComponent.nArrows - 1)) / 2f + num3 * (float)num2, PlayerMovement.Instance.playerCam.up) * vector2;
+                            GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(inventoryItem2.prefab);
+                            gameObject.GetComponent<Renderer>().material = inventoryItem2.material;
+                            gameObject.transform.position = vector;
+                            gameObject.transform.rotation = __instance.transform.rotation;
+                            float num4 = (float)Hotbar.Instance.currentItem.attackDamage;
+                            float num5 = (float)inventoryItem2.attackDamage;
+                            // float projectileSpeed = inventoryItem.bowComponent.projectileSpeed;
+                            float projectileSpeed = 88f;
+                            Rigidbody component = gameObject.GetComponent<Rigidbody>();
+                            float num6 = 80f * num * projectileSpeed * PowerupInventory.Instance.GetRobinMultiplier(null);
+                            component.AddForce(vector2 * num6);
+                            Physics.IgnoreCollision(gameObject.GetComponent<Collider>(), PlayerMovement.Instance.GetPlayerCollider(), true);
+                            float num7 = num5 * num4;
+                            num7 *= num;
+                            Arrow component2 = gameObject.GetComponent<Arrow>();
+                            component2.damage = (int)((num7 / 4) * PowerupInventory.Instance.GetRobinMultiplier(null));
+                            component2.fallingWhileShooting = (!PlayerMovement.Instance.grounded && PlayerMovement.Instance.GetVelocity().y < 0f);
+                            component2.speedWhileShooting = PlayerMovement.Instance.GetVelocity().magnitude;
+                            component2.item = inventoryItem2;
+
+
+                            ClientSend.ShootArrow(vector, vector2, (num6), inventoryItem2.id);
+
+
+
+                            list.Add(component2.GetComponent<Collider>());
+                            num2++;
                         }
-                        Vector3 vector = PlayerMovement.Instance.playerCam.position + Vector3.down * 0.5f;
-                        Vector3 vector2 = PlayerMovement.Instance.playerCam.forward;
-                        float num3 = (float)inventoryItem.bowComponent.angleDelta;
-                        vector2 = Quaternion.AngleAxis(-(num3 * (float)(inventoryItem.bowComponent.nArrows - 1)) / 2f + num3 * (float)num2, PlayerMovement.Instance.playerCam.up) * vector2;
-                        GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(inventoryItem2.prefab);
-                        gameObject.GetComponent<Renderer>().material = inventoryItem2.material;
-                        gameObject.transform.position = vector;
-                        gameObject.transform.rotation = __instance.transform.rotation;
-                        float num4 = (float)Hotbar.Instance.currentItem.attackDamage;
-                        float num5 = (float)inventoryItem2.attackDamage;
-                        float projectileSpeed = inventoryItem.bowComponent.projectileSpeed;
-                        Rigidbody component = gameObject.GetComponent<Rigidbody>();
-                        float num6 = 100f * num * projectileSpeed * PowerupInventory.Instance.GetRobinMultiplier(null);
-                        component.AddForce(vector2 * num6);
-                        Physics.IgnoreCollision(gameObject.GetComponent<Collider>(), PlayerMovement.Instance.GetPlayerCollider(), true);
-                        float num7 = num5 * num4;
-                        num7 *= num;
-                        Arrow component2 = gameObject.GetComponent<Arrow>();
-                        component2.damage = (int)(num7 * PowerupInventory.Instance.GetRobinMultiplier(null));
-                        component2.fallingWhileShooting = (!PlayerMovement.Instance.grounded && PlayerMovement.Instance.GetVelocity().y < 0f);
-                        component2.speedWhileShooting = PlayerMovement.Instance.GetVelocity().magnitude;
-                        component2.item = inventoryItem2;
-                        ClientSend.ShootArrow(vector, vector2, num6, inventoryItem2.id);
-                        list.Add(component2.GetComponent<Collider>());
-                        num2++;
-                    }
-                    foreach (Collider collider in list)
-                    {
-                        foreach (Collider collider2 in list)
+                        foreach (Collider collider in list)
                         {
-                            Physics.IgnoreCollision(collider, collider2, true);
+                            foreach (Collider collider2 in list)
+                            {
+                                Physics.IgnoreCollision(collider, collider2, true);
+                            }
                         }
+                        InventoryUI.Instance.arrows.UpdateCell();
+                        CameraShaker.Instance.ChargeShake(num);
+
+                        CooldownBar.Instance.ResetCooldownTime(4f, true);
+
+                        
+
+                        if (Timer <= 5)
+                        {
+                            Timer += Time.deltaTime;
+                        }
+
                     }
-                    InventoryUI.Instance.arrows.UpdateCell();
-                    CameraShaker.Instance.ChargeShake(num);
+                    
+                   
 
 
                     return false;
